@@ -36,6 +36,7 @@ pub fn ascii_to_hex(s: u8) -> u8 {
     }
 }
 
+// converts base64 hex bytes to ascii bytes
 fn base64_table(i: u8) -> u8 {
     if i < 26 {
         // [A-Z]
