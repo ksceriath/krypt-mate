@@ -28,8 +28,8 @@ pub fn ascii_to_hex(s: u8) -> u8 {
     if s >= 48 && s <= 57 {
         // [0-9]
         s - 48
-    } else if s >= 97 && s <= 122 {
-        // [a-z]
+    } else if s >= 97 && s <= 102 {
+        // [a-f]
         s - 97 + 10
     } else {
         s
