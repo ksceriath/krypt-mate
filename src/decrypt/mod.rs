@@ -19,44 +19,45 @@ pub fn single_char_xor(hex: &str) -> String {
 }
 
 fn score(s: &str) -> f32 {
-    let x = scoring_map();
-
-    let mut score = 0.;
-    s.chars().for_each(|c| {
-        if x.contains_key(&c.to_ascii_uppercase()) {
-            score += x.get(&c.to_ascii_uppercase()).unwrap();
-        }
-    });
-    score
+    s.chars()
+        .map(|c| {
+            *scoring_map()
+                .get(&c.to_ascii_lowercase())
+                .copied()
+                .get_or_insert(0.)
+        })
+        .fold(0., |acc, x| acc + x)
 }
 
 fn scoring_map() -> HashMap<char, f32> {
     let mut x = HashMap::new();
-    x.insert('E', 12.02);
-    x.insert('T', 9.10);
-    x.insert('A', 8.12);
-    x.insert('O', 7.68);
-    x.insert('I', 7.31);
-    x.insert('N', 6.95);
-    x.insert('S', 6.28);
-    x.insert('R', 6.02);
-    x.insert('H', 5.92);
-    x.insert('D', 4.32);
-    x.insert('L', 3.98);
-    x.insert('U', 2.88);
-    x.insert('C', 2.71);
-    x.insert('M', 2.61);
-    x.insert('F', 2.30);
-    x.insert('Y', 2.11);
-    x.insert('W', 2.09);
-    x.insert('G', 2.03);
-    x.insert('P', 1.82);
-    x.insert('B', 1.49);
-    x.insert('V', 1.11);
-    x.insert('K', 0.69);
-    x.insert('X', 0.17);
-    x.insert('Q', 0.11);
-    x.insert('J', 0.10);
-    x.insert('Z', 0.07);
+    // source : https://en.wikipedia.org/wiki/Letter_frequency
+    x.insert('a', 8.497);
+    x.insert('b', 1.492);
+    x.insert('c', 2.202);
+    x.insert('d', 4.253);
+    x.insert('e', 11.162);
+    x.insert('f', 2.228);
+    x.insert('g', 2.015);
+    x.insert('h', 6.094);
+    x.insert('i', 7.546);
+    x.insert('j', 0.153);
+    x.insert('k', 1.292);
+    x.insert('l', 4.025);
+    x.insert('m', 2.406);
+    x.insert('n', 6.749);
+    x.insert('o', 7.507);
+    x.insert('p', 1.929);
+    x.insert('q', 0.095);
+    x.insert('r', 7.587);
+    x.insert('s', 6.327);
+    x.insert('t', 9.356);
+    x.insert('u', 2.758);
+    x.insert('v', 0.978);
+    x.insert('w', 2.560);
+    x.insert('x', 0.150);
+    x.insert('y', 1.994);
+    x.insert('z', 0.077);
+    x.insert(' ', 12.);
     x
 }
