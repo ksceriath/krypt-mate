@@ -1,7 +1,8 @@
 use crate::hex_to_base64;
 use log::debug;
+use std::string::FromUtf8Error;
 
-pub fn xor_string_byte(hex1: &str, charr: u8) -> String {
+pub fn xor_string_byte(hex1: &str, charr: u8) -> Result<String, FromUtf8Error> {
     let bytes1: Vec<u8> = hex1
         .as_bytes()
         .iter()
@@ -17,7 +18,7 @@ pub fn xor_string_byte(hex1: &str, charr: u8) -> String {
     debug!("with hex {:?} ", bytes2);
     let result = xor_bytes(bytes1, bytes2);
     debug!("to produce {:?}", result);
-    String::from_utf8_lossy(&result).to_string()
+    String::from_utf8(result)
 }
 
 pub fn xor_strings(hex1: &str, hex2: &str) -> String {

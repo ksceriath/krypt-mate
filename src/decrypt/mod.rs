@@ -5,14 +5,16 @@ use std::collections::HashMap;
 pub fn single_char_xor(hex: &str) -> Option<String> {
     let mut res = None;
     let mut max_score = -1.;
-    (0..0xff).for_each(|c| {
-        let s = hexxor::xor_string_byte(hex, c);
-        let score = score(&s);
-        if score > max_score {
-            res = Some(s.clone());
-            max_score = score;
+    (0..0xff).for_each(|c| match hexxor::xor_string_byte(hex, c) {
+        Ok(s) => {
+            let score = score(&s);
+            if score > max_score {
+                res = Some(s.clone());
+                max_score = score;
+            }
+            debug!("Decrypting with {} gives {} with score {}", c, s, score);
         }
-        debug!("Decrypting with {} gives {} with score {}", c, s, score);
+        Err(e) => debug!("Error with {} : {}", c, e),
     });
     res
 }
