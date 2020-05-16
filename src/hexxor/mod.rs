@@ -1,7 +1,7 @@
 use crate::hex_to_base64;
-use std::string::FromUtf8Error;
+use log::debug;
 
-pub fn xor_string_byte(hex1: &str, charr: u8) -> Result<String, FromUtf8Error> {
+pub fn xor_string_byte(hex1: &str, charr: u8) -> String {
     let bytes1: Vec<u8> = hex1
         .as_bytes()
         .iter()
@@ -11,13 +11,13 @@ pub fn xor_string_byte(hex1: &str, charr: u8) -> Result<String, FromUtf8Error> {
         .step_by(2)
         .map(|index| (bytes1[index] << 4) + bytes1[index + 1])
         .collect();
-    // print!("Xoring hex {:?} ", bytes1);
+    debug!("Xoring hex {:?} ", bytes1);
     // repeat `charr` the length of `hex1` times
     let bytes2: Vec<u8> = hex1.as_bytes().iter().map(|_| charr).collect();
-    // print!("with hex {:?} ", bytes2);
+    debug!("with hex {:?} ", bytes2);
     let result = xor_bytes(bytes1, bytes2);
-    // println!("to produce {:?}", result);
-    String::from_utf8(result)
+    debug!("to produce {:?}", result);
+    String::from_utf8_lossy(&result).to_string()
 }
 
 pub fn xor_strings(hex1: &str, hex2: &str) -> String {
@@ -27,15 +27,15 @@ pub fn xor_strings(hex1: &str, hex2: &str) -> String {
         .iter()
         .map(|byte| hex_to_base64::ascii_to_hex(*byte))
         .collect();
-    print!("Xoring hex {:?} ", bytes1);
+    debug!("Xoring hex {:?} ", bytes1);
     let bytes2: Vec<u8> = hex2
         .as_bytes()
         .iter()
         .map(|byte| hex_to_base64::ascii_to_hex(*byte))
         .collect();
-    print!("with hex {:?} ", bytes2);
+    debug!("with hex {:?} ", bytes2);
     let result = xor_bytes(bytes1, bytes2).iter().map(hex_to_ascii).collect();
-    println!("to produce {:?}", result);
+    debug!("to produce {:?}", result);
     String::from_utf8(result).unwrap()
 }
 
