@@ -10,7 +10,11 @@ pub fn repeated_key_xor(hex: &str, key: &str) -> String {
     }
     let encrypted = hexxor::xor_bytes(bytes, repeated_key);
     let x = encrypted.iter().map(|byte| hexxor::split_hex(byte));
-    match String::from_utf8(x.flat_map(|bytes| bytes.to_be_bytes().to_vec()).map(|byte| hexxor::hex_string(&byte)).collect()) {
+    match String::from_utf8(
+        x.flat_map(|bytes| bytes.to_be_bytes().to_vec())
+            .map(|byte| hexxor::hex_string(&byte))
+            .collect(),
+    ) {
         Ok(s) => s,
         Err(e) => {
             debug!("Error encrypting {} : {:?}", hex, e);

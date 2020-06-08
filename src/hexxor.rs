@@ -51,7 +51,7 @@ pub fn xor_bytes(b1: Vec<u8>, b2: Vec<u8>) -> Vec<u8> {
 }
 
 // Converts bytes representing hexadecimal digits to their ascii counterparts
-// The bytes from 
+// The bytes from
 // 00000000 => 00110000 (= 48, ascii for character '0')
 // 00000001 => 00110001 (= 49, ascii for character '1')
 // 00001001 => 00111001 (= 57, ascii for character '9')
