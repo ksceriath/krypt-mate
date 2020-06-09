@@ -1,4 +1,4 @@
-use cryptopals::hex_to_base64;
+use cryptopals::hexaa;
 use std::env;
 
 fn main() {
@@ -7,7 +7,7 @@ fn main() {
         "{:?}",
         args[1..]
             .iter()
-            .map(|arg| hex_to_base64::convert(arg))
+            .map(|arg| hexaa::convert(arg))
             .collect::<Vec<String>>()
     );
 }

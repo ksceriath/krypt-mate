@@ -1,4 +1,4 @@
-use crate::hexxor;
+use crate::hexaa;
 use log::debug;
 use std::collections::HashMap;
 
@@ -6,7 +6,7 @@ pub fn single_char_xor(hex: &str) -> Option<String> {
     let mut res = None;
     let mut max_score = -1.;
     (0..0xff).for_each(
-        |c| match String::from_utf8(hexxor::xor_string_byte(hex, c)) {
+        |c| match String::from_utf8(hexaa::xor_string_byte(hex, c)) {
             Ok(s) => {
                 let score = score(&s);
                 if score > max_score {
