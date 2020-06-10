@@ -6,9 +6,7 @@ fn main() {
 
     let input = fs::read_to_string("resources/challenge4").unwrap();
 
-    input
-        .split("\n")
-        .map(|s| (s, decrypt::single_char_xor(&s)))
-        .filter(|(_, target)| target.is_some())
-        .for_each(|(source, target)| println!("{} => {}", source, target.unwrap()));
+    let i: &Vec<&str> = &input.split("\n").collect();
+    let result = decrypt::single_char_xor(i);
+    println!("Result: {:?}", result);
 }
