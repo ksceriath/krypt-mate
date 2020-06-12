@@ -40,8 +40,7 @@ pub fn hex_bytes(hex: &str) -> Vec<u8> {
         "Invalid hex string `{}`: Even number of digits expected.",
         hex
     );
-    hex
-        .as_bytes()
+    hex.as_bytes()
         .chunks(2)
         .map(|byte| ascii_to_hex(byte[0], byte[1]))
         .collect()
@@ -163,7 +162,7 @@ pub fn split_hex(h: &u8) -> u16 {
 /// cryptopals::hexaa::hex_to_base64(h);
 /// ```
 pub fn hex_to_base64(hex: &str) -> String {
-    assert!(hex.len()&1 == 0);
+    assert!(hex.len() & 1 == 0);
     let new_bytes: Vec<u8> = hex
         .as_bytes()
         .chunks(2)
@@ -182,7 +181,7 @@ pub fn hex_to_base64(hex: &str) -> String {
 
 trait Padder {
     fn pad_b64(self, count: usize) -> Self;
- }
+}
 
 impl Padder for Vec<u8> {
     fn pad_b64(mut self, count: usize) -> Self {
@@ -208,15 +207,16 @@ pub fn ascii_to_hex(s: u8, t: u8) -> u8 {
         s - 97 + 10
     } else {
         panic!("ASCII for hex should be a letter [a-f], or a digit [0-9].")
-    } << 4) + (if t >= 48 && t <= 57 {
-        // [0-9]
-        t - 48
-    } else if t >= 97 && t <= 102 {
-        // [a-f]
-        t - 97 + 10
-    } else {
-        panic!("ASCII for hex should be a letter [a-f], or a digit [0-9].")
-    })
+    } << 4)
+        + (if t >= 48 && t <= 57 {
+            // [0-9]
+            t - 48
+        } else if t >= 97 && t <= 102 {
+            // [a-f]
+            t - 97 + 10
+        } else {
+            panic!("ASCII for hex should be a letter [a-f], or a digit [0-9].")
+        })
 }
 
 /// Converts a base64 digit into corresponding string representation (ASCII)
@@ -256,7 +256,12 @@ fn hex_triad_to_base64_quad(a: u8, b: u8, c: u8) -> Vec<u8> {
     debug!("2 bits of {} and 4 bits of {} : {}", a, b, second_digit);
     debug!("4 bits of {} and 2 bits of {} : {}", b, c, third_digit);
     debug!("Last 6 bits of {} : {}", c, fourth_digit);
-    vec![base64_table(first_digit), base64_table(second_digit), base64_table(third_digit), base64_table(fourth_digit)]
+    vec![
+        base64_table(first_digit),
+        base64_table(second_digit),
+        base64_table(third_digit),
+        base64_table(fourth_digit),
+    ]
 }
 
 #[cfg(test)]
