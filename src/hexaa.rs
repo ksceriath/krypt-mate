@@ -10,6 +10,7 @@ use log::debug;
 /// ```should_panic
 /// cryptopals::hexaa::xor_string_byte("abd1079", 0x1d);
 /// ```
+// TODO This can work with just an array of bytes &[u8], and doesn't need a &str.
 pub fn xor_string_byte(hex: &str, charr: u8) -> Vec<u8> {
     let bytes1 = hex_bytes(hex);
     debug!("Xoring hex {:?} ", bytes1);
@@ -39,20 +40,16 @@ pub fn hex_bytes(hex: &str) -> Vec<u8> {
         "Invalid hex string `{}`: Even number of digits expected.",
         hex
     );
-    let bytes1: Vec<u8> = hex
+    hex
         .as_bytes()
-        .iter()
-        .map(|byte| ascii_to_hex(*byte))
-        .collect();
-    (0..bytes1.len())
-        .step_by(2)
-        .map(|index| (bytes1[index] << 4) + bytes1[index + 1])
+        .chunks(2)
+        .map(|byte| ascii_to_hex(byte[0], byte[1]))
         .collect()
 }
 
 /// XORs the input hex strings together.
 /// Input strings must be ASCII representation of hexadecimal numbers.
-/// Strings can contain lettrs [a-f] and numbers [0-9].
+/// Strings can contain letters [a-f] and numbers [0-9].
 /// Strings must be of equal lengths, automatic padding is not done.
 /// ```
 /// assert_eq!(cryptopals::hexaa::xor_strings(
@@ -71,13 +68,13 @@ pub fn xor_strings(hex1: &str, hex2: &str) -> String {
     let bytes1: Vec<u8> = hex1
         .as_bytes()
         .iter()
-        .map(|byte| ascii_to_hex(*byte))
+        .map(|byte| ascii_to_hex('0' as u8, *byte))
         .collect();
     debug!("Xoring hex {:?} ", bytes1);
     let bytes2: Vec<u8> = hex2
         .as_bytes()
         .iter()
-        .map(|byte| ascii_to_hex(*byte))
+        .map(|byte| ascii_to_hex('0' as u8, *byte))
         .collect();
     debug!("with hex {:?} ", bytes2);
     let result = xor_bytes(&bytes1, &bytes2).iter().map(hex_string).collect();
@@ -144,41 +141,66 @@ pub fn split_hex(h: &u8) -> u16 {
 /// (in order) in string form, and corresponds to six bits.
 ///
 /// Correspondingly, every 3 hexadecimal digits are eligible to be converted into
-/// 2 base64 digits.
+/// 2 base64 digits. However, 3 hexadecimal digits do not stand for full bytes,
+/// and hence we convert 6 hexadecimal digits (= 3 bytes) into 4 base64 digits.
 /// Following implementation pads the hexadecimal number with additional zeroes
-/// to get 3*n digits.
-///
+/// to get 3*n bytes, however an even number of digits are still expected.
+/// The 0s are padded to the right and appear as '=' in final representation.
 /// ```
-/// let h = "a11";
-/// assert_eq!(cryptopals::hexaa::convert(h), "oR".to_owned());
+/// let h = "a1"; // 1 byte provided; pads by 2 '=' char
+/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oQ==".to_owned());
 /// ```
-pub fn convert(hex: &str) -> String {
-    // debug!("Converting string: {}", hex);
-    // let bytes: Vec<u8> = hex.as_bytes().iter().map(|v| ascii_to_hex(*v)).collect();
-    // debug!("Converting bytes: {:?}", bytes);
+/// ```
+/// let h = "a110"; // 2 bytes provided; pads by 1 '=' char
+/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oRA=".to_owned());
+/// ```
+/// ```
+/// let h = "a11012"; // 3 bytes provided; no padding needed
+/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oRAS".to_owned());
+/// ```
+/// ```should_panic
+/// let h = "a11"; // incomplete number of bytes
+/// cryptopals::hexaa::hex_to_base64(h);
+/// ```
+pub fn hex_to_base64(hex: &str) -> String {
+    assert!(hex.len()&1 == 0);
     let new_bytes: Vec<u8> = hex
         .as_bytes()
-        .iter()
-        .map(|v| ascii_to_hex(*v))
+        .chunks(2)
+        .map(|v| ascii_to_hex(v[0], v[1]))
         .collect::<Vec<u8>>()
-        .rchunks(3) // rchunks to pad on the left
-        .rev() // rev to restore the reversed rchunks order
+        .chunks(3)
         .flat_map(|v| match v.len() {
-            1 => hex_triad_to_base64_diad(0, 0, v[0]),
-            2 => hex_triad_to_base64_diad(0, v[0], v[1]),
-            3 => hex_triad_to_base64_diad(v[0], v[1], v[2]),
+            1 => hex_triad_to_base64_quad(v[0], 0, 0).pad_b64(2),
+            2 => hex_triad_to_base64_quad(v[0], v[1], 0).pad_b64(1),
+            3 => hex_triad_to_base64_quad(v[0], v[1], v[2]),
             _ => panic!("Unexpected: Chunk should have a maximum length of 3."),
         })
         .collect();
     String::from_utf8(new_bytes).unwrap()
 }
 
+trait Padder {
+    fn pad_b64(self, count: usize) -> Self;
+ }
+
+impl Padder for Vec<u8> {
+    fn pad_b64(mut self, count: usize) -> Self {
+        let pad = '=' as u8;
+        let len = self.len();
+        for i in (len - count)..len {
+            self[i] = pad;
+        }
+        self
+    }
+}
+
 /// Converts an ASCII representation of a hexadecimal digit
 /// into its integer equivalent.
 /// Allowed hexadecimal digits : [0-9a-f]
 /// Panics if input does not correspond to the ASCII values of above characters
-pub fn ascii_to_hex(s: u8) -> u8 {
-    if s >= 48 && s <= 57 {
+pub fn ascii_to_hex(s: u8, t: u8) -> u8 {
+    (if s >= 48 && s <= 57 {
         // [0-9]
         s - 48
     } else if s >= 97 && s <= 102 {
@@ -186,7 +208,15 @@ pub fn ascii_to_hex(s: u8) -> u8 {
         s - 97 + 10
     } else {
         panic!("ASCII for hex should be a letter [a-f], or a digit [0-9].")
-    }
+    } << 4) + (if t >= 48 && t <= 57 {
+        // [0-9]
+        t - 48
+    } else if t >= 97 && t <= 102 {
+        // [a-f]
+        t - 97 + 10
+    } else {
+        panic!("ASCII for hex should be a letter [a-f], or a digit [0-9].")
+    })
 }
 
 /// Converts a base64 digit into corresponding string representation (ASCII)
@@ -217,18 +247,16 @@ fn base64_table(i: u8) -> u8 {
 /// Converts three hexadecimal digits into two base64 digits
 /// Inputs are three hexadecimal bytes
 /// Output is a Vector of two ASCII-bytes of base64 digits
-fn hex_triad_to_base64_diad(a: u8, b: u8, c: u8) -> Vec<u8> {
-    let a_s = a << 2;
-    let b_s = b >> 2;
-    let b_s2 = (b & 0b11) << 4;
-    debug!("Left shift {} by 2 to get {}", a, a_s);
-    debug!("Right shift {} by 2 to get {}", b, b_s);
-    debug!("Left shift lower two bits of {} by 4 to get {}", b, b_s2);
-    let first_byte = a_s + b_s;
-    let second_byte = b_s2 + c;
-    debug!("First byte = {}", first_byte);
-    debug!("Second byte = {}", second_byte);
-    vec![base64_table(first_byte), base64_table(second_byte)]
+fn hex_triad_to_base64_quad(a: u8, b: u8, c: u8) -> Vec<u8> {
+    let first_digit = a >> 2;
+    let second_digit = ((a << 4) + (b >> 4)) & 0x3f;
+    let third_digit = ((b << 2) + (c >> 6)) & 0x3f;
+    let fourth_digit = c & 0x3f;
+    debug!("First 6 bits of {} : {}", a, first_digit);
+    debug!("2 bits of {} and 4 bits of {} : {}", a, b, second_digit);
+    debug!("4 bits of {} and 2 bits of {} : {}", b, c, third_digit);
+    debug!("Last 6 bits of {} : {}", c, fourth_digit);
+    vec![base64_table(first_digit), base64_table(second_digit), base64_table(third_digit), base64_table(fourth_digit)]
 }
 
 #[cfg(test)]
@@ -236,46 +264,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn convert_should_work() {
-        let h = "a11";
-        assert_eq!(convert(h), "oR");
+    fn hex_to_base64_should_work() {
+        let h = "a11012";
+        assert_eq!(hex_to_base64(h), "oRAS");
     }
 
     #[test]
-    fn convert_should_pad_with_one_additional_zero() {
-        let h = "a1";
-        assert_eq!(convert(h), "Ch");
+    fn hex_to_base64_should_pad_with_one_additional_zero() {
+        let h = "a110";
+        assert_eq!(hex_to_base64(h), "oRA=");
     }
 
     #[test]
-    fn convert_should_pad_with_one_additional_zero_for_longer_hex() {
-        let h = "f10a1";
-        assert_eq!(convert(h), "DxCh");
+    fn hex_to_base64_should_pad_with_one_additional_zero_for_longer_hex() {
+        let h = "f10a11bdef";
+        assert_eq!(hex_to_base64(h), "8QoRve8=");
     }
 
     #[test]
-    fn convert_should_pad_with_two_additional_zeroes() {
-        let h = "1f0d";
-        assert_eq!(convert(h), "AB8N");
+    fn hex_to_base64_should_pad_with_two_additional_zeroes() {
+        let h = "1f";
+        assert_eq!(hex_to_base64(h), "Hw==");
     }
 
     #[test]
     fn ascii_to_hex_happy_path() {
-        assert_eq!(ascii_to_hex('a' as u8), 0b1010);
-        assert_eq!(ascii_to_hex('f' as u8), 0b1111);
-        assert_eq!(ascii_to_hex('0' as u8), 0b0000);
-        assert_eq!(ascii_to_hex('9' as u8), 0b1001);
+        assert_eq!(ascii_to_hex('9' as u8, 'a' as u8), 0b10011010);
+        assert_eq!(ascii_to_hex('a' as u8, 'f' as u8), 0b10101111);
+        assert_eq!(ascii_to_hex('f' as u8, '0' as u8), 0b11110000);
+        assert_eq!(ascii_to_hex('0' as u8, '9' as u8), 0b00001001);
     }
 
     #[test]
     #[should_panic]
     fn ascii_to_hex_should_panic_for_uppercase_letters() {
-        ascii_to_hex('A' as u8);
+        ascii_to_hex('0' as u8, 'A' as u8);
     }
 
     #[test]
     #[should_panic]
     fn ascii_to_hex_should_panic_for_out_of_bounds_letters() {
-        ascii_to_hex('z' as u8);
+        ascii_to_hex('0' as u8, 'z' as u8);
     }
 }
