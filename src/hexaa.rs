@@ -1,24 +1,19 @@
 use crate::strings::ascii_to_hex;
 use crate::strings::hex_as_ascii;
-use crate::strings::hex_string_as_bytes;
 use log::debug;
 
-/// XORs the ASCII-representation of hex string,
-/// with repeated instance of the provided character-byte.
+/// XORs a vector of bytes with repeated instances of another byte.
 /// ```
 /// assert_eq!(
-///     cryptopals::hexaa::xor_string_byte("abd10792", 0x1d),
+///     cryptopals::hexaa::repeated_byte_xor(
+///      &vec![0xab, 0xd1, 0x07, 0x92],
+///       0x1d),
 ///     vec![0xab ^ 0x1d, 0xd1 ^ 0x1d, 0x07 ^ 0x1d, 0x92 ^ 0x1d]);
 /// ```
-/// ```should_panic
-/// cryptopals::hexaa::xor_string_byte("abd1079", 0x1d);
-/// ```
-// TODO This can work with just an array of bytes &[u8], and doesn't need a &str.
-pub fn xor_string_byte(hex: &str, charr: u8) -> Vec<u8> {
-    let bytes1 = hex_string_as_bytes(hex);
+pub fn repeated_byte_xor(bytes1: &Vec<u8>, charr: u8) -> Vec<u8> {
     debug!("Xoring hex {:?} ", bytes1);
     // repeat `charr` the length of `hex1` times
-    let bytes2: Vec<u8> = hex.as_bytes().iter().map(|_| charr).collect();
+    let bytes2: Vec<u8> = bytes1.iter().map(|_| charr).collect();
     debug!("with hex {:?} ", bytes2);
     xor_bytes(&bytes1, &bytes2)
 }

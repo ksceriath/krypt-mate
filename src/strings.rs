@@ -31,19 +31,19 @@ impl Padder for Vec<u8> {
 /// The 0s are padded to the right and appear as '=' in final representation.
 /// ```
 /// let h = "a1"; // 1 byte provided; pads by 2 '=' char
-/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oQ==".to_owned());
+/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oQ==".to_owned());
 /// ```
 /// ```
 /// let h = "a110"; // 2 bytes provided; pads by 1 '=' char
-/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oRA=".to_owned());
+/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oRA=".to_owned());
 /// ```
 /// ```
 /// let h = "a11012"; // 3 bytes provided; no padding needed
-/// assert_eq!(cryptopals::hexaa::hex_to_base64(h), "oRAS".to_owned());
+/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oRAS".to_owned());
 /// ```
 /// ```should_panic
 /// let h = "a11"; // incomplete number of bytes
-/// cryptopals::hexaa::hex_to_base64(h);
+/// cryptopals::strings::hex_string_to_base64_string(h);
 /// ```
 pub fn hex_string_to_base64_string(hex: &str) -> String {
     assert!(hex.len() & 1 == 0);
@@ -68,12 +68,12 @@ pub fn hex_string_to_base64_string(hex: &str) -> String {
 /// Input string should be a valid hex, with even number of digits.
 /// ```
 /// assert_eq!(
-///     cryptopals::hexaa::hex_bytes("ad1f"),
+///     cryptopals::strings::hex_string_as_bytes("ad1f"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
 /// ```should_panic
 /// assert_eq!(
-///     cryptopals::hexaa::hex_bytes("ad1d1"),
+///     cryptopals::strings::hex_string_as_bytes("ad1d1"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
 pub fn hex_string_as_bytes(hex: &str) -> Vec<u8> {
@@ -120,14 +120,14 @@ pub fn ascii_to_hex(s: u8, t: u8) -> u8 {
 /// 102 (ASCII for 'f')
 ///
 /// ```
-/// assert_eq!(cryptopals::hexaa::hex_string(&0), 48);
-/// assert_eq!(cryptopals::hexaa::hex_string(&1), 49);
-/// assert_eq!(cryptopals::hexaa::hex_string(&9), 57);
-/// assert_eq!(cryptopals::hexaa::hex_string(&10), 97);
-/// assert_eq!(cryptopals::hexaa::hex_string(&15), 102);
+/// assert_eq!(cryptopals::strings::hex_as_ascii(&0), 48);
+/// assert_eq!(cryptopals::strings::hex_as_ascii(&1), 49);
+/// assert_eq!(cryptopals::strings::hex_as_ascii(&9), 57);
+/// assert_eq!(cryptopals::strings::hex_as_ascii(&10), 97);
+/// assert_eq!(cryptopals::strings::hex_as_ascii(&15), 102);
 /// ```
 /// ```should_panic
-/// cryptopals::hexaa::hex_string(&16);
+/// cryptopals::strings::hex_as_ascii(&16);
 ///```
 pub fn hex_as_ascii(h: &u8) -> u8 {
     if *h < 10 {
