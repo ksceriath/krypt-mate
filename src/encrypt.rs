@@ -1,4 +1,5 @@
 use crate::hexaa;
+use crate::strings;
 use log::debug;
 
 pub fn repeated_key_xor(hex: &str, key: &str) -> String {
@@ -12,7 +13,7 @@ pub fn repeated_key_xor(hex: &str, key: &str) -> String {
     let x = encrypted.iter().map(|byte| hexaa::split_hex(byte));
     match String::from_utf8(
         x.flat_map(|bytes| bytes.to_be_bytes().to_vec())
-            .map(|byte| hexaa::hex_string(&byte))
+            .map(|byte| strings::hex_as_ascii(&byte))
             .collect(),
     ) {
         Ok(s) => s,

@@ -7,7 +7,7 @@ fn main() {
         "{:?}",
         args[1..]
             .iter()
-            .map(|arg| hexaa::hex_to_base64(arg))
+            .map(|arg| hexaa::hex_string_to_base64_string(arg))
             .collect::<Vec<String>>()
     );
 }
