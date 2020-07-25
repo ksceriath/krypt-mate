@@ -7,7 +7,6 @@ use log::debug;
 /// hex_ascii : means the ASCII bytes corresponding to a hex string.
 /// b64_ascii : means the ASCII bytes corresponding to a b84 string.
 /// byte : anywhere refers to binary. Its represented as a u8, or a Vec<u8>.
-/// Several interim representations may be used to represent the ASCII bytes for a given string.
 /// So, a typical conversion is like: hex/b64 (string) ===> hex_ascii/b64_ascii (Vec<u8>) ===> bytes (Vec<u8>)
 
 /// Padder provides an implementation of pad_b64 function for Vec<u8>
