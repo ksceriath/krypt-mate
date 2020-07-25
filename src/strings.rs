@@ -1,5 +1,18 @@
+use crate::hexaa;
 use log::debug;
 
+/// For the purposes of readability, note the following definitions.
+/// hex : means the string form of a hexadecimal number. E.g. "0259acef". (It does not represent the underlying hexadecimal bytes, nor the ASCII bytes)
+/// b64 : means the string form of a base-64 number. E.g. "8QoRve8=". (Again, it does not represent the underlying binary format, nor the ASCII bytes)
+/// hex_ascii : means the ASCII bytes corresponding to a hex string.
+/// b64_ascii : means the ASCII bytes corresponding to a b84 string.
+/// byte : anywhere refers to binary. Its represented as a u8, or a Vec<u8>.
+/// Several interim representations may be used to represent the ASCII bytes for a given string.
+/// So, a typical conversion is like: hex/b64 (string) ===> hex_ascii/b64_ascii (Vec<u8>) ===> bytes (Vec<u8>)
+
+/// Padder provides an implementation of pad_b64 function for Vec<u8>
+/// pad_b64 provides a fluent way of padding a Vec representing a base64 string
+/// with sufficient number of pad characters ('=')
 trait Padder {
     fn pad_b64(self, count: usize) -> Self;
 }
@@ -13,6 +26,41 @@ impl Padder for Vec<u8> {
         }
         self
     }
+}
+
+/// XORs the input hex strings together.
+/// Input strings must be ASCII representation of hexadecimal numbers.
+/// Strings can contain letters [a-f] and numbers [0-9].
+/// Strings must be of equal lengths, automatic padding is not done.
+/// ```
+/// assert_eq!(cryptopals::strings::xor_hexes(
+///         "0259acef",
+///         "bd134678"),
+///     "bf4aea97");
+/// ```
+/// ```should_panic
+/// cryptopals::strings::xor_hexes("02", "bd1"); // length constraint
+/// ```
+/// ```should_panic
+/// cryptopals::strings::xor_hexes("02g", "bd1"); // invalid hex digit
+/// ```
+pub fn xor_hexes(hex1: &str, hex2: &str) -> String {
+    assert!(hex1.len() == hex2.len());
+    let bytes1: Vec<u8> = hex_as_bytes(hex1);
+    debug!("Xoring hex {:?} ", bytes1);
+    let bytes2: Vec<u8> = hex_as_bytes(hex2);
+    debug!("with hex {:?} ", bytes2);
+    let result = hexaa::xor_bytes(&bytes1, &bytes2);
+    bytes_to_hex(&result)
+}
+
+/// Convert a vector of bytes to a hexadecimal ASCII string representation
+pub fn bytes_to_hex(bytes: &Vec<u8>) -> String {
+    let ascii = bytes
+        .iter()
+        .flat_map(|item| byte_as_hex_ascii(item))
+        .collect();
+    String::from_utf8(ascii).unwrap()
 }
 
 /// Converts a string representation (ASCII) of a hexadecimal number
@@ -31,36 +79,24 @@ impl Padder for Vec<u8> {
 /// The 0s are padded to the right and appear as '=' in final representation.
 /// ```
 /// let h = "a1"; // 1 byte provided; pads by 2 '=' char
-/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oQ==".to_owned());
+/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oQ==".to_owned());
 /// ```
 /// ```
 /// let h = "a110"; // 2 bytes provided; pads by 1 '=' char
-/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oRA=".to_owned());
+/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oRA=".to_owned());
 /// ```
 /// ```
 /// let h = "a11012"; // 3 bytes provided; no padding needed
-/// assert_eq!(cryptopals::strings::hex_string_to_base64_string(h), "oRAS".to_owned());
+/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oRAS".to_owned());
 /// ```
 /// ```should_panic
 /// let h = "a11"; // incomplete number of bytes
-/// cryptopals::strings::hex_string_to_base64_string(h);
+/// cryptopals::strings::hex_to_b64(h);
 /// ```
-pub fn hex_string_to_base64_string(hex: &str) -> String {
+pub fn hex_to_b64(hex: &str) -> String {
     assert!(hex.len() & 1 == 0);
-    let new_bytes: Vec<u8> = hex
-        .as_bytes()
-        .chunks(2)
-        .map(|v| ascii_to_hex(v[0], v[1]))
-        .collect::<Vec<u8>>()
-        .chunks(3)
-        .flat_map(|v| match v.len() {
-            1 => hex_triad_to_base64_quad(v[0], 0, 0).pad_b64(2),
-            2 => hex_triad_to_base64_quad(v[0], v[1], 0).pad_b64(1),
-            3 => hex_triad_to_base64_quad(v[0], v[1], v[2]),
-            _ => panic!("Unexpected: Chunk should have a maximum length of 3."),
-        })
-        .collect();
-    String::from_utf8(new_bytes).unwrap()
+
+    bytes_to_b64(hex_as_bytes(hex))
 }
 
 /// Converts an ASCII representation of a hex string,
@@ -68,15 +104,15 @@ pub fn hex_string_to_base64_string(hex: &str) -> String {
 /// Input string should be a valid hex, with even number of digits.
 /// ```
 /// assert_eq!(
-///     cryptopals::strings::hex_string_as_bytes("ad1f"),
+///     cryptopals::strings::hex_as_bytes("ad1f"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
 /// ```should_panic
 /// assert_eq!(
-///     cryptopals::strings::hex_string_as_bytes("ad1d1"),
+///     cryptopals::strings::hex_as_bytes("ad1d1"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
-pub fn hex_string_as_bytes(hex: &str) -> Vec<u8> {
+pub fn hex_as_bytes(hex: &str) -> Vec<u8> {
     assert_eq!(
         hex.len() & 1,
         0,
@@ -85,15 +121,15 @@ pub fn hex_string_as_bytes(hex: &str) -> Vec<u8> {
     );
     hex.as_bytes()
         .chunks(2)
-        .map(|byte| ascii_to_hex(byte[0], byte[1]))
+        .map(|byte| hex_ascii_to_byte(byte[0], byte[1]))
         .collect()
 }
 
-/// Converts an ASCII representation of a hexadecimal digit
-/// into its integer equivalent.
+/// Converts an ASCII representation of 2 hexadecimal digits
+/// into binary equivalent (1 byte).
 /// Allowed hexadecimal digits : [0-9a-f]
 /// Panics if input does not correspond to the ASCII values of above characters
-pub fn ascii_to_hex(s: u8, t: u8) -> u8 {
+fn hex_ascii_to_byte(s: u8, t: u8) -> u8 {
     (if s >= 48 && s <= 57 {
         // [0-9]
         s - 48
@@ -114,22 +150,18 @@ pub fn ascii_to_hex(s: u8, t: u8) -> u8 {
         })
 }
 
+fn byte_as_hex_ascii(h: &u8) -> Vec<u8> {
+    vec![
+        byte_as_partial_hex_ascii(&(h >> 4)),
+        byte_as_partial_hex_ascii(&(h & 0x0f)),
+    ]
+}
+
 /// Converts bytes representing hexadecimal digits to their ASCII representations.
 /// Numbers 0 to 9 are converted into numbers 48 (ASCII for '0') to 57 (ASCII for '9').
 /// Numbers 10 (hex a) to 15 (hex f) are converted into numbers 97 (ASCII for 'a') to
 /// 102 (ASCII for 'f')
-///
-/// ```
-/// assert_eq!(cryptopals::strings::hex_as_ascii(&0), 48);
-/// assert_eq!(cryptopals::strings::hex_as_ascii(&1), 49);
-/// assert_eq!(cryptopals::strings::hex_as_ascii(&9), 57);
-/// assert_eq!(cryptopals::strings::hex_as_ascii(&10), 97);
-/// assert_eq!(cryptopals::strings::hex_as_ascii(&15), 102);
-/// ```
-/// ```should_panic
-/// cryptopals::strings::hex_as_ascii(&16);
-///```
-pub fn hex_as_ascii(h: &u8) -> u8 {
+fn byte_as_partial_hex_ascii(h: &u8) -> u8 {
     if *h < 10 {
         // [0-9]
         *h + 48
@@ -137,14 +169,27 @@ pub fn hex_as_ascii(h: &u8) -> u8 {
         // [a-f]
         *h + 87
     } else {
-        panic!("{} beyond the range of hexadecimal digits");
+        panic!("{} beyond the range of hexadecimal digits", h);
     }
+}
+
+fn bytes_to_b64(bytes: Vec<u8>) -> String {
+    let new_bytes = bytes
+        .chunks(3)
+        .flat_map(|v| match v.len() {
+            1 => hex_triad_to_base64_quad(v[0], 0, 0).pad_b64(2),
+            2 => hex_triad_to_base64_quad(v[0], v[1], 0).pad_b64(1),
+            3 => hex_triad_to_base64_quad(v[0], v[1], v[2]),
+            _ => panic!("Unexpected: Chunk should have a maximum length of 3."),
+        })
+        .collect();
+    String::from_utf8(new_bytes).unwrap()
 }
 
 /// Converts a base64 digit into corresponding string representation (ASCII)
 /// ASCII representation digits consist of [A-Za-z0-9+/]
 /// Panics if the input does not make a base64 digit, i.e. input > 63
-fn base64_table(i: u8) -> u8 {
+fn byte_to_b64_ascii(i: u8) -> u8 {
     if i < 26 {
         // [A-Z]
         i + 65
@@ -179,10 +224,10 @@ fn hex_triad_to_base64_quad(a: u8, b: u8, c: u8) -> Vec<u8> {
     debug!("4 bits of {} and 2 bits of {} : {}", b, c, third_digit);
     debug!("Last 6 bits of {} : {}", c, fourth_digit);
     vec![
-        base64_table(first_digit),
-        base64_table(second_digit),
-        base64_table(third_digit),
-        base64_table(fourth_digit),
+        byte_to_b64_ascii(first_digit),
+        byte_to_b64_ascii(second_digit),
+        byte_to_b64_ascii(third_digit),
+        byte_to_b64_ascii(fourth_digit),
     ]
 }
 
@@ -193,24 +238,59 @@ mod tests {
     #[test]
     fn hex_to_base64_should_work() {
         let h = "a11012";
-        assert_eq!(hex_string_to_base64_string(h), "oRAS");
+        assert_eq!(hex_to_b64(h), "oRAS");
     }
 
     #[test]
     fn hex_to_base64_should_pad_with_one_additional_zero() {
         let h = "a110";
-        assert_eq!(hex_string_to_base64_string(h), "oRA=");
+        assert_eq!(hex_to_b64(h), "oRA=");
     }
 
     #[test]
     fn hex_to_base64_should_pad_with_one_additional_zero_for_longer_hex() {
         let h = "f10a11bdef";
-        assert_eq!(hex_string_to_base64_string(h), "8QoRve8=");
+        assert_eq!(hex_to_b64(h), "8QoRve8=");
     }
 
     #[test]
     fn hex_to_base64_should_pad_with_two_additional_zeroes() {
         let h = "1f";
-        assert_eq!(hex_string_to_base64_string(h), "Hw==");
+        assert_eq!(hex_to_b64(h), "Hw==");
+    }
+
+    #[test]
+    fn ascii_to_hex_happy_path() {
+        assert_eq!(hex_ascii_to_byte('9' as u8, 'a' as u8), 0b10011010);
+        assert_eq!(hex_ascii_to_byte('a' as u8, 'f' as u8), 0b10101111);
+        assert_eq!(hex_ascii_to_byte('f' as u8, '0' as u8), 0b11110000);
+        assert_eq!(hex_ascii_to_byte('0' as u8, '9' as u8), 0b00001001);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ascii_to_hex_should_panic_for_uppercase_letters() {
+        hex_ascii_to_byte('0' as u8, 'A' as u8);
+    }
+
+    #[test]
+    #[should_panic]
+    fn ascii_to_hex_should_panic_for_out_of_bounds_letters() {
+        hex_ascii_to_byte('0' as u8, 'z' as u8);
+    }
+
+    #[test]
+    fn byte_as_partial_hex_ascii_should_convert_as_expected() {
+        assert_eq!(byte_as_partial_hex_ascii(&0), 48);
+        assert_eq!(byte_as_partial_hex_ascii(&1), 49);
+        assert_eq!(byte_as_partial_hex_ascii(&9), 57);
+        assert_eq!(byte_as_partial_hex_ascii(&10), 97);
+        assert_eq!(byte_as_partial_hex_ascii(&15), 102);
+    }
+
+    #[test]
+    #[should_panic]
+    fn byte_as_partial_hex_ascii_should_panic_for_out_of_bounds_bytes() {
+        byte_as_partial_hex_ascii(&16);
     }
 }
