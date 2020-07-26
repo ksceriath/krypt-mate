@@ -1,4 +1,4 @@
-use cryptopals::strings;
+use cryptopals::encodings;
 use std::env;
 
 fn main() {
@@ -7,7 +7,7 @@ fn main() {
         "{:?}",
         args[1..]
             .iter()
-            .map(|arg| strings::hex_to_b64(arg))
+            .map(|arg| encodings::hex_to_b64(arg))
             .collect::<Vec<String>>()
     );
 }

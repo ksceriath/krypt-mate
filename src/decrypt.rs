@@ -1,5 +1,5 @@
 use crate::hexaa;
-use crate::strings;
+use crate::encodings;
 use log::debug;
 use std::collections::HashMap;
 
@@ -22,7 +22,7 @@ pub fn single_char_xor(ss: &[&str]) -> Option<String> {
 }
 
 fn helper(hex: &str) -> (Option<String>, f32) {
-    let hex = strings::hex_as_bytes(hex);
+    let hex = encodings::hex_as_bytes(hex);
     let mut res = None;
     let mut max_score = -1.;
     let scorer = LetterFrequency::new();

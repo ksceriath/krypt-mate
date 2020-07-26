@@ -32,16 +32,16 @@ impl Padder for Vec<u8> {
 /// Strings can contain letters [a-f] and numbers [0-9].
 /// Strings must be of equal lengths, automatic padding is not done.
 /// ```
-/// assert_eq!(cryptopals::strings::xor_hexes(
+/// assert_eq!(cryptopals::encodings::xor_hexes(
 ///         "0259acef",
 ///         "bd134678"),
 ///     "bf4aea97");
 /// ```
 /// ```should_panic
-/// cryptopals::strings::xor_hexes("02", "bd1"); // length constraint
+/// cryptopals::encodings::xor_hexes("02", "bd1"); // length constraint
 /// ```
 /// ```should_panic
-/// cryptopals::strings::xor_hexes("02g", "bd1"); // invalid hex digit
+/// cryptopals::encodings::xor_hexes("02g", "bd1"); // invalid hex digit
 /// ```
 pub fn xor_hexes(hex1: &str, hex2: &str) -> String {
     assert!(hex1.len() == hex2.len());
@@ -78,19 +78,19 @@ pub fn bytes_to_hex(bytes: &Vec<u8>) -> String {
 /// The 0s are padded to the right and appear as '=' in final representation.
 /// ```
 /// let h = "a1"; // 1 byte provided; pads by 2 '=' char
-/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oQ==".to_owned());
+/// assert_eq!(cryptopals::encodings::hex_to_b64(h), "oQ==".to_owned());
 /// ```
 /// ```
 /// let h = "a110"; // 2 bytes provided; pads by 1 '=' char
-/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oRA=".to_owned());
+/// assert_eq!(cryptopals::encodings::hex_to_b64(h), "oRA=".to_owned());
 /// ```
 /// ```
 /// let h = "a11012"; // 3 bytes provided; no padding needed
-/// assert_eq!(cryptopals::strings::hex_to_b64(h), "oRAS".to_owned());
+/// assert_eq!(cryptopals::encodings::hex_to_b64(h), "oRAS".to_owned());
 /// ```
 /// ```should_panic
 /// let h = "a11"; // incomplete number of bytes
-/// cryptopals::strings::hex_to_b64(h);
+/// cryptopals::encodings::hex_to_b64(h);
 /// ```
 pub fn hex_to_b64(hex: &str) -> String {
     assert!(hex.len() & 1 == 0);
@@ -103,12 +103,12 @@ pub fn hex_to_b64(hex: &str) -> String {
 /// Input string should be a valid hex, with even number of digits.
 /// ```
 /// assert_eq!(
-///     cryptopals::strings::hex_as_bytes("ad1f"),
+///     cryptopals::encodings::hex_as_bytes("ad1f"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
 /// ```should_panic
 /// assert_eq!(
-///     cryptopals::strings::hex_as_bytes("ad1d1"),
+///     cryptopals::encodings::hex_as_bytes("ad1d1"),
 ///     vec![0b_1010_1101, 0b_0001_1111]);
 /// ```
 pub fn hex_as_bytes(hex: &str) -> Vec<u8> {
