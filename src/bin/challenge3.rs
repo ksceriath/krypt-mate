@@ -1,8 +1,8 @@
 use cryptopals::decrypt;
-use std::env;
+use std::fs;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
+    let input = fs::read_to_string("resources/challenge3").unwrap();
 
-    println!("{:?}", decrypt::single_char_xor(&[&args[1]]));
+    println!("{:?}", decrypt::single_char_xor(&[&input]));
 }

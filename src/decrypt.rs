@@ -3,7 +3,7 @@ use crate::encodings;
 use log::debug;
 use std::collections::HashMap;
 
-/// Runs the input strings through single-char XORs
+/// Runs the input hex-strings through single-char XORs
 /// with all the possible character bytes (0x00 to 0xff)
 /// and returns the string with highest score
 /// calculated as weighted sum of letter frequencies of english alphabet.
