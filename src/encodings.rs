@@ -362,7 +362,10 @@ mod tests {
     #[test]
     fn normalized_hamming_distance_should_calculate() {
         assert_eq!(
-            normalized_hamming_distance("this is a test".as_bytes().to_vec().as_ref(), "wokka wokka!!!".as_bytes().to_vec().as_ref()),
+            normalized_hamming_distance(
+                "this is a test".as_bytes().to_vec().as_ref(),
+                "wokka wokka!!!".as_bytes().to_vec().as_ref()
+            ),
             37.0 / 14.0
         );
     }
@@ -370,17 +373,33 @@ mod tests {
     #[test]
     #[should_panic]
     fn normalized_hamming_distance_should_panic() {
-        normalized_hamming_distance("this is a test".as_bytes().to_vec().as_ref(), "wokka wokka".as_bytes().to_vec().as_ref());
+        normalized_hamming_distance(
+            "this is a test".as_bytes().to_vec().as_ref(),
+            "wokka wokka".as_bytes().to_vec().as_ref(),
+        );
     }
 
     #[test]
     fn average_normalized_hamming_distance_should_calculate() {
-        let expected = normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), "is".as_bytes().to_vec().as_ref())
-            + normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), " i".as_bytes().to_vec().as_ref())
-            + normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref())
-            + normalized_hamming_distance("is".as_bytes().to_vec().as_ref(), " i".as_bytes().to_vec().as_ref())
-            + normalized_hamming_distance("is".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref())
-            + normalized_hamming_distance(" i".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref());
+        let expected = normalized_hamming_distance(
+            "th".as_bytes().to_vec().as_ref(),
+            "is".as_bytes().to_vec().as_ref(),
+        ) + normalized_hamming_distance(
+            "th".as_bytes().to_vec().as_ref(),
+            " i".as_bytes().to_vec().as_ref(),
+        ) + normalized_hamming_distance(
+            "th".as_bytes().to_vec().as_ref(),
+            "s ".as_bytes().to_vec().as_ref(),
+        ) + normalized_hamming_distance(
+            "is".as_bytes().to_vec().as_ref(),
+            " i".as_bytes().to_vec().as_ref(),
+        ) + normalized_hamming_distance(
+            "is".as_bytes().to_vec().as_ref(),
+            "s ".as_bytes().to_vec().as_ref(),
+        ) + normalized_hamming_distance(
+            " i".as_bytes().to_vec().as_ref(),
+            "s ".as_bytes().to_vec().as_ref(),
+        );
         let expected = expected / 6.;
         assert_eq!(
             average_normalized_hamming_distance(2, "this is a test".as_bytes().to_vec().as_ref()),
@@ -390,7 +409,10 @@ mod tests {
 
     #[test]
     fn average_normalized_hamming_distance_should_calculate_when_size_is_not_enough() {
-        let expected = normalized_hamming_distance("this ".as_bytes().to_vec().as_ref(), "is a ".as_bytes().to_vec().as_ref());
+        let expected = normalized_hamming_distance(
+            "this ".as_bytes().to_vec().as_ref(),
+            "is a ".as_bytes().to_vec().as_ref(),
+        );
         assert_eq!(
             average_normalized_hamming_distance(5, "this is a test".as_bytes().to_vec().as_ref()),
             expected

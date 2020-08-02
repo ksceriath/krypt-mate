@@ -47,6 +47,6 @@ pub fn count_set_bits(byte: u8) -> u32 {
     if byte == 0 {
         0
     } else {
-        1 + count_set_bits(byte & (byte-1))
+        1 + count_set_bits(byte & (byte - 1))
     }
 }
