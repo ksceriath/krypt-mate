@@ -27,6 +27,61 @@ impl Padder for Vec<u8> {
     }
 }
 
+// Calculates normalized hamming distance and averages it over 4 slice of key_size size
+pub fn average_normalized_hamming_distance(key_size: usize, v: &Vec<u8>) -> f32 {
+    let ranges: Vec<_> = (1..5)
+        .map(|x| x * key_size)
+        .filter(|x| *x < v.len())
+        .map(|x| (x - key_size..x))
+        .collect();
+
+    let combinations = combine(&ranges, &ranges);
+    let combinations_count = combinations.len() as f32;
+
+    combinations
+        .into_iter()
+        .map(|(p, q)| normalized_hamming_distance(&v[p.clone()].to_vec(), &v[q.clone()].to_vec()))
+        .sum::<f32>()
+        / combinations_count
+}
+
+/// Calculates the normalized hammind distance between two strings,
+/// by dividing the hamming distance by the number of bytes in the strings
+// TODO : Should move these implementations to hexaa module
+fn normalized_hamming_distance(b1: &Vec<u8>, b2: &Vec<u8>) -> f32 {
+    assert!(b1.len() == b2.len());
+
+    let x = hexaa::xor_bytes(&b1, &b2);
+    hexaa::count_set_bits_in_bytes(x) as f32 / b1.len() as f32
+}
+
+/// Calculates hamming distance between the two given strings
+pub fn hamming_distance(s1: &str, s2: &str) -> u32 {
+    assert!(s1.len() == s2.len());
+
+    let b1 = s1.as_bytes().to_vec();
+    let b2 = s2.as_bytes().to_vec();
+
+    let x = hexaa::xor_bytes(&b1, &b2);
+    hexaa::count_set_bits_in_bytes(x)
+}
+
+/// Takes in two vectors, and zips them in cross product fashion, yielding every combination possible.
+/// Cross product is done so as not to creates index-wise duplicate combinations (e.g. (a, b) and (b, a))
+fn combine<'a, 'b, T>(v1: &'a Vec<T>, v2: &'b Vec<T>) -> Vec<(&'a T, &'b T)> {
+    v1.iter()
+        .enumerate()
+        .flat_map(|(index1, item1)| {
+            v2.iter()
+                .enumerate()
+                .filter(|(index2, _)| *index2 > index1)
+                .map(|(_, item2)| (item1, item2))
+                .collect::<Vec<(&T, &T)>>()
+                .into_iter()
+        })
+        .collect()
+}
+
 /// XORs the input hex strings together.
 /// Input strings must be ASCII representation of hexadecimal numbers.
 /// Strings can contain letters [a-f] and numbers [0-9].
@@ -291,5 +346,71 @@ mod tests {
     #[should_panic]
     fn byte_as_partial_hex_ascii_should_panic_for_out_of_bounds_bytes() {
         byte_as_partial_hex_ascii(&16);
+    }
+
+    #[test]
+    fn hamming_distance_should_calculate() {
+        assert_eq!(hamming_distance("this is a test", "wokka wokka!!!"), 37);
+    }
+
+    #[test]
+    #[should_panic]
+    fn hamming_distance_should_panic() {
+        hamming_distance("this is a test", "wokka wokka");
+    }
+
+    #[test]
+    fn normalized_hamming_distance_should_calculate() {
+        assert_eq!(
+            normalized_hamming_distance("this is a test".as_bytes().to_vec().as_ref(), "wokka wokka!!!".as_bytes().to_vec().as_ref()),
+            37.0 / 14.0
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn normalized_hamming_distance_should_panic() {
+        normalized_hamming_distance("this is a test".as_bytes().to_vec().as_ref(), "wokka wokka".as_bytes().to_vec().as_ref());
+    }
+
+    #[test]
+    fn average_normalized_hamming_distance_should_calculate() {
+        let expected = normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), "is".as_bytes().to_vec().as_ref())
+            + normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), " i".as_bytes().to_vec().as_ref())
+            + normalized_hamming_distance("th".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref())
+            + normalized_hamming_distance("is".as_bytes().to_vec().as_ref(), " i".as_bytes().to_vec().as_ref())
+            + normalized_hamming_distance("is".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref())
+            + normalized_hamming_distance(" i".as_bytes().to_vec().as_ref(), "s ".as_bytes().to_vec().as_ref());
+        let expected = expected / 6.;
+        assert_eq!(
+            average_normalized_hamming_distance(2, "this is a test".as_bytes().to_vec().as_ref()),
+            expected
+        );
+    }
+
+    #[test]
+    fn average_normalized_hamming_distance_should_calculate_when_size_is_not_enough() {
+        let expected = normalized_hamming_distance("this ".as_bytes().to_vec().as_ref(), "is a ".as_bytes().to_vec().as_ref());
+        assert_eq!(
+            average_normalized_hamming_distance(5, "this is a test".as_bytes().to_vec().as_ref()),
+            expected
+        );
+    }
+
+    #[test]
+    fn combine_should_combine() {
+        let x = vec![0, 5, 10, 15];
+        let k = combine(&x, &x);
+        println!("{:?}", k);
+        assert!(
+            k == vec![
+                (&0, &5),
+                (&0, &10),
+                (&0, &15),
+                (&5, &10),
+                (&5, &15),
+                (&10, &15)
+            ]
+        );
     }
 }

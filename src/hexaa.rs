@@ -38,3 +38,15 @@ pub fn xor_bytes(b1: &Vec<u8>, b2: &Vec<u8>) -> Vec<u8> {
 pub fn split_hex(h: &u8) -> u16 {
     (((h & 0xf0) as u16) << 4) + (h & 0x0f) as u16
 }
+
+pub fn count_set_bits_in_bytes(bytes: Vec<u8>) -> u32 {
+    bytes.iter().map(|byte| count_set_bits(*byte)).sum()
+}
+
+pub fn count_set_bits(byte: u8) -> u32 {
+    if byte == 0 {
+        0
+    } else {
+        1 + count_set_bits(byte & (byte-1))
+    }
+}
