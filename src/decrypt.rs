@@ -9,7 +9,7 @@ pub fn find_vignere_key(bytes: &Vec<u8>) -> Vec<u8> {
     chunk_and_transpose(&bytes, key_size)
         .iter()
         .map(single_byte_xor)
-        .map(|(_, _, x)| x.unwrap())
+        .map(|x| x.unwrap().0)
         .collect()
 }
 
@@ -43,16 +43,24 @@ pub fn find_optimum_key_size(s: &Vec<u8>) -> usize {
 /// and returns the string with highest score
 /// calculated as weighted sum of letter frequencies of english alphabet.
 /// Letters [a-z] and space [' '] are included in the calculated frequency score.
+/// TODO this is not a utility; move this to the challenge (3, 4) specific code instead
 pub fn single_char_xor(ss: &[&str]) -> (Option<u8>, Option<String>) {
     let mut max_score = 0.;
     let mut result = None;
     let mut key = None;
+    ss.iter()
+        .map(|s| encodings::hex_as_bytes(s))
+        .map(|bytes| single_byte_xor(&bytes))
+        .filter(|result| result.is_some())
+        .map(|some_result| some_result.unwrap())
+        .max_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
     for ref s in ss.iter() {
-        let (out, score, k) = single_byte_xor(&encodings::hex_as_bytes(s));
-        if score > max_score {
-            max_score = score;
-            result = out;
-            key = k;
+        if let Some((k, out, score)) = single_byte_xor(&encodings::hex_as_bytes(s)) {
+            if score > max_score {
+                max_score = score;
+                result = Some(out);
+                key = Some(k);
+            }
         }
     }
     (key, result)
@@ -61,29 +69,14 @@ pub fn single_char_xor(ss: &[&str]) -> (Option<u8>, Option<String>) {
 /// Runs the input vector of bytes through repeated_byte_xor with all the possible bytes (keys)
 /// returning the key, score, and the xor'ed output for the key with highest score.
 /// Score is calculated based on English language letter frequencies.
-fn single_byte_xor(hex: &Vec<u8>) -> (Option<String>, f32, Option<u8>) {
-    let mut res = None;
-    let mut max_score = -1.;
-    let mut key = None;
+fn single_byte_xor(hex: &Vec<u8>) -> Option<(u8, String, f32)> {
     let scorer = LetterFrequency::new();
-    (0..0xff).for_each(
-        |c| match String::from_utf8(hexaa::repeated_byte_xor(&hex, c)) {
-            Ok(s) => {
-                let score = scorer.score(&s);
-                if score > max_score {
-                    res = Some(s.clone());
-                    max_score = score;
-                    key = Some(c);
-                }
-                debug!("Decrypting with {} gives {} with score {}", c, s, score);
-            }
-            Err(e) => debug!(
-                "Decrypting with {} did not give a UTF6 encoded string : {}",
-                c, e
-            ),
-        },
-    );
-    (res, max_score, key)
+    (0..0xff)
+        .map(|key| (key, String::from_utf8(hexaa::repeated_byte_xor(&hex, key))))
+        .filter(|(_, result)| result.is_ok())
+        .map(|(key, result)| (key, result.unwrap()))
+        .map(|(key, string)| (key, string.to_string(), scorer.score(&string)))
+        .max_by(|(_, _, score1), (_, _, score2)| score1.partial_cmp(score2).unwrap())
 }
 
 struct LetterFrequency {
