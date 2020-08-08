@@ -44,26 +44,14 @@ pub fn find_optimum_key_size(s: &Vec<u8>) -> usize {
 /// calculated as weighted sum of letter frequencies of english alphabet.
 /// Letters [a-z] and space [' '] are included in the calculated frequency score.
 /// TODO this is not a utility; move this to the challenge (3, 4) specific code instead
-pub fn single_char_xor(ss: &[&str]) -> (Option<u8>, Option<String>) {
-    let mut max_score = 0.;
-    let mut result = None;
-    let mut key = None;
+pub fn single_char_xor(ss: &[&str]) -> Option<(u8, String)> {
     ss.iter()
         .map(|s| encodings::hex_as_bytes(s))
         .map(|bytes| single_byte_xor(&bytes))
         .filter(|result| result.is_some())
         .map(|some_result| some_result.unwrap())
-        .max_by(|a, b| a.2.partial_cmp(&b.2).unwrap());
-    for ref s in ss.iter() {
-        if let Some((k, out, score)) = single_byte_xor(&encodings::hex_as_bytes(s)) {
-            if score > max_score {
-                max_score = score;
-                result = Some(out);
-                key = Some(k);
-            }
-        }
-    }
-    (key, result)
+        .max_by(|a, b| a.2.partial_cmp(&b.2).unwrap())
+        .map(|x| (x.0, x.1))
 }
 
 /// Runs the input vector of bytes through repeated_byte_xor with all the possible bytes (keys)
