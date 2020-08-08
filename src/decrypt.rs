@@ -1,6 +1,5 @@
 use crate::encodings;
 use crate::hexaa;
-use log::debug;
 use std::collections::HashMap;
 
 pub fn find_vignere_key(bytes: &Vec<u8>) -> Vec<u8> {
@@ -57,10 +56,15 @@ pub fn single_char_xor(ss: &[&str]) -> Option<(u8, String)> {
 /// Runs the input vector of bytes through repeated_byte_xor with all the possible bytes (keys)
 /// returning the key, score, and the xor'ed output for the key with highest score.
 /// Score is calculated based on English language letter frequencies.
-fn single_byte_xor(hex: &Vec<u8>) -> Option<(u8, String, f32)> {
+fn single_byte_xor(bytes: &Vec<u8>) -> Option<(u8, String, f32)> {
     let scorer = LetterFrequency::new();
     (0..0xff)
-        .map(|key| (key, String::from_utf8(hexaa::repeated_byte_xor(&hex, key))))
+        .map(|key| {
+            (
+                key,
+                String::from_utf8(hexaa::repeated_byte_xor(&bytes, key)),
+            )
+        })
         .filter(|(_, result)| result.is_ok())
         .map(|(key, result)| (key, result.unwrap()))
         .map(|(key, string)| (key, string.to_string(), scorer.score(&string)))
