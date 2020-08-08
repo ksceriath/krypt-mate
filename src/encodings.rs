@@ -227,6 +227,35 @@ fn byte_as_partial_hex_ascii(h: &u8) -> u8 {
     }
 }
 
+/// Converts an ASCII representation of a base-64 string,
+/// into a Vector of corresponding bytes.
+pub fn b64_as_bytes(b64: &str) -> Vec<u8> {
+    let bytes = b64.as_bytes().to_vec();
+
+    assert!(bytes.len() % 4 == 0);
+
+    bytes
+        .chunks(4)
+        .flat_map(|c| b64_ascii_quad_to_hex_triad(c[0], c[1], c[2], c[3]))
+        .collect()
+}
+
+fn b64_ascii_quad_to_hex_triad(a: u8, b: u8, c: u8, d: u8) -> Vec<u8> {
+    let p = b64_ascii_to_byte(a).unwrap();
+    let q = b64_ascii_to_byte(b).unwrap();
+    let r = b64_ascii_to_byte(c);
+    let s = b64_ascii_to_byte(d);
+
+    let mut bytes = vec![(p << 2) + (q >> 4)];
+    if let Some(r) = r {
+        bytes.push((q << 4) + (r >> 2))
+    }
+    if let Some(s) = s {
+        bytes.push((r.unwrap() << 6) + s)
+    }
+    bytes
+}
+
 fn bytes_to_b64(bytes: Vec<u8>) -> String {
     let new_bytes = bytes
         .chunks(3)
@@ -238,6 +267,24 @@ fn bytes_to_b64(bytes: Vec<u8>) -> String {
         })
         .collect();
     String::from_utf8(new_bytes).unwrap()
+}
+
+fn b64_ascii_to_byte(i: u8) -> Option<u8> {
+    if i >= 'A' as u8 && i <= 'Z' as u8 {
+        Some(i - 'A' as u8)
+    } else if i >= 'a' as u8 && i <= 'z' as u8 {
+        Some(i - 'a' as u8 + 26)
+    } else if i >= '0' as u8 && i <= '9' as u8 {
+        Some(i - '0' as u8 + 52)
+    } else if i == '+' as u8 {
+        Some(62)
+    } else if i == '/' as u8 {
+        Some(63)
+    } else if i == '=' as u8 {
+        None
+    } else {
+        panic!("Base64 characters should belong to the set [A-Za-z+/=].")
+    }
 }
 
 /// Converts a base64 digit into corresponding string representation (ASCII)
@@ -311,6 +358,20 @@ mod tests {
     fn hex_to_base64_should_pad_with_two_additional_zeroes() {
         let h = "1f";
         assert_eq!(hex_to_b64(h), "Hw==");
+    }
+
+    #[test]
+    #[should_panic]
+    fn b64_as_bytes_should_panic_if_length_is_not_a_multiple_of_four() {
+        b64_as_bytes("8QoRve8");
+    }
+
+    #[test]
+    fn b64_as_bytes_should_convert_b64_strings_to_bytes() {
+        assert_eq!(b64_as_bytes("oRAS"), vec![0xa1, 0x10, 0x12]);
+        assert_eq!(b64_as_bytes("oRA="), vec![0xa1, 0x10]);
+        assert_eq!(b64_as_bytes("8QoRve8="), vec![0xf1, 0x0a, 0x11, 0xbd, 0xef]);
+        assert_eq!(b64_as_bytes("Hw=="), vec![0x1f]);
     }
 
     #[test]
