@@ -4,7 +4,7 @@ use log::debug;
 /// For the purposes of readability, note the following definitions.
 /// hex : means the string form of a hexadecimal number. E.g. "0259acef". (It does not represent the underlying hexadecimal bytes, nor the ASCII bytes)
 /// b64 : means the string form of a base-64 number. E.g. "8QoRve8=". (Again, it does not represent the underlying binary format, nor the ASCII bytes)
-/// hex_ascii : means the ASCII bytes corresponding to a hex string.
+/// hex_ascii : means the ASCII bytes corresponding to a hex string. This is same as hex, only difference being - type is integer and not string.
 /// b64_ascii : means the ASCII bytes corresponding to a b84 string.
 /// byte : anywhere refers to binary. Its represented as a u8, or a Vec<u8>.
 /// So, a typical conversion is like: hex/b64 (string) ===> hex_ascii/b64_ascii (Vec<u8>) ===> bytes (Vec<u8>)
@@ -232,7 +232,7 @@ fn byte_as_partial_hex_ascii(h: &u8) -> u8 {
 pub fn b64_as_bytes(b64: &str) -> Vec<u8> {
     let bytes = b64.as_bytes().to_vec();
 
-    assert!(bytes.len() % 4 == 0);
+    assert_eq!(bytes.len() % 4, 0);
 
     bytes
         .chunks(4)
@@ -484,9 +484,9 @@ mod tests {
     fn combine_should_combine() {
         let x = vec![0, 5, 10, 15];
         let k = combine(&x, &x);
-        println!("{:?}", k);
-        assert!(
-            k == vec![
+        assert_eq!(
+            k,
+            vec![
                 (&0, &5),
                 (&0, &10),
                 (&0, &15),
