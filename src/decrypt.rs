@@ -58,7 +58,7 @@ pub fn single_char_xor(ss: &[&str]) -> Option<(u8, String)> {
 /// Score is calculated based on English language letter frequencies.
 fn single_byte_xor(bytes: &Vec<u8>) -> Option<(u8, String, f32)> {
     let scorer = LetterFrequency::new();
-    (0..0xff)
+    (0..=0xff)
         .map(|key| {
             (
                 key,
